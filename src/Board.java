@@ -365,11 +365,6 @@ public class Board
             squares[temp.capturedPiece.getBoardRow()][temp.capturedPiece.getBoardCol()].pieceHere = temp.capturedPiece;
         }
 
-//        if (enPassantCaptured != null)
-//        {
-//            squares[fromRow][toCol].pieceHere = enPassantCaptured;
-//        }
-
         return safeMove;
     }
 
