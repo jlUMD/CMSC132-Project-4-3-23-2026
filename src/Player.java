@@ -1,3 +1,8 @@
+/**
+ * Keeps track of a player's info like name, color, and stats
+ * @author ganesh
+ *
+ */
 public class Player
 {
 
@@ -7,6 +12,11 @@ public class Player
     private int losses;
     private int puzzlesSolved;
 
+    /**
+     * Creates player with name and color
+     * @param name
+     * @param isWhite
+     */
     public Player(String name, boolean isWhite)
     {
         this.name = name;
@@ -16,6 +26,7 @@ public class Player
         this.puzzlesSolved = 0;
     }
 
+    // Getters
     public String getName()
     {
         return name;
@@ -41,21 +52,27 @@ public class Player
         return puzzlesSolved;
     }
 
+    /** Adds a win */
     public void addWin()
     {
         wins++;
     }
 
+    /** Adds a loss */
     public void addLoss()
     {
         losses++;
     }
 
+    /** Adds a puzzle solved */
     public void addPuzzleSolved()
     {
         puzzlesSolved++;
     }
 
+    /**
+     * toString for player
+     */
     @Override
     public String toString()
     {

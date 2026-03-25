@@ -1,20 +1,41 @@
 import java.util.ArrayList;
 
+/**
+ * The knight piece, moves in an L shape and can jump over stuff
+ * @author ganesh
+ *
+ */
 public class Knight extends Piece
 {
 
+    /**
+     * Creates knight object
+     * @param isWhite
+     * @param boardRow
+     * @param boardCol
+     */
     public Knight(boolean isWhite, int boardRow, int boardCol)
     {
         super(isWhite, boardRow, boardCol, 3, "Knight");
-        
+
     }
 
+    /**
+     * Gets the unicode symbol for knight
+     */
     @Override
     public String getSymbol()
     {
         return isWhite() ? "\u2658" : "\u265E";
     }
 
+    /**
+     * Checks if knight can move to target, just needs to be an L shape
+     * @param row
+     * @param col
+     * @param board
+     * @return
+     */
     @Override
     public boolean canMoveTo(int row, int col, Board board)
     {
@@ -24,6 +45,11 @@ public class Knight extends Piece
         return (dRow == 2 && dCol == 1) || (dRow == 1 && dCol == 2);
     }
 
+    /**
+     * Gets all 8 possible L shaped moves for the knight
+     * @param board
+     * @return
+     */
     @Override
     public Point[] getPossibleMoves(Board board)
     {

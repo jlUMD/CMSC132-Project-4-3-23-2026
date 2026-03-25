@@ -1,4 +1,3 @@
-//redo - Ganeshan
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
@@ -6,9 +5,18 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
+/**
+ * This is the main class that runs everything. Handles input,
+ * game flow, drawing, animations, and puzzle mode
+ * @author ganesh
+ *
+ */
 public class ChessGame extends Game
 {
 
+    /**
+     * Keeps track of game state stuff like whose turn, check, etc
+     */
     private class GameState
     {
         Player currentPlayer;
@@ -18,6 +26,7 @@ public class ChessGame extends Game
         ArrayList<Piece> capturedWhite;
         ArrayList<Piece> capturedBlack;
 
+        /** Creates game state starting with white */
         GameState(Player white)
         {
             this.currentPlayer = white;
@@ -58,6 +67,36 @@ public class ChessGame extends Game
     private boolean gameOver;
     private boolean showMenu;
 
+    private Image offscreen;
+
+    private boolean animating;
+    private double animProgress;
+    private double animStartX;
+    private double animStartY;
+    private double animEndX;
+    private double animEndY;
+    private String animSymbol;
+    private boolean animPieceWhite;
+    private int animToRow;
+    private int animToCol;
+
+    private boolean hasCapture;
+    private String captureSymbol;
+    private boolean capturePieceWhite;
+    private double captureCenterX;
+    private double captureCenterY;
+
+    private boolean spinning;
+    private double spinAngle;
+    private Polygon spinPolygon;
+
+    private boolean pendingNormalFinish;
+    private boolean pendingPuzzleFinish;
+    private boolean pendingPuzzleSuccess;
+
+    /**
+     * Sets up everything, board, players, key listener, etc
+     */
     public ChessGame()
     {
         super("Chess", WINDOW_WIDTH, WINDOW_HEIGHT);
@@ -85,6 +124,9 @@ public class ChessGame extends Game
         gameOver = false;
         showMenu = true;
 
+        animating = false;
+        spinning = false;
+
         this.addKeyListener(new KeyListener()
         {
             @Override
@@ -107,8 +149,16 @@ public class ChessGame extends Game
         board.setupStandardBoard();
     }
 
-    private void handleKeyPress(KeyEvent e) //redone
+    /**
+     * Handles all the key presses, different behavior depending on
+     * if we're in menu, game over, or playing
+     * @param e
+     */
+    private void handleKeyPress(KeyEvent e)
     {
+        if (animating)
+            return;
+
         int code = e.getKeyCode();
 
         if (showMenu)
@@ -126,7 +176,7 @@ public class ChessGame extends Game
                 pieceSelected = false;
                 statusMessage = "White's turn - Use arrow keys and Enter";
                 statusTimer = 120;
-            } 
+            }
             else if (code == KeyEvent.VK_2)
             {
                 showMenu = false;
@@ -149,7 +199,7 @@ public class ChessGame extends Game
             if (code == KeyEvent.VK_R)
             {
                 resetGame();
-            } 
+            }
             else if (code == KeyEvent.VK_M)
             {
                 showMenu = true;
@@ -208,7 +258,7 @@ public class ChessGame extends Game
                     statusMessage = piece.getPieceName() + " selected - " + currentLegalMoves.size() + " moves";
                     statusTimer = 60;
                 }
-            } 
+            }
             else
             {
                 if (cursorRow == selectedRow && cursorCol == selectedCol)
@@ -232,88 +282,8 @@ public class ChessGame extends Game
 
                 if (isLegal)
                 {
-                    if (puzzleMode)
-                    {
-                        boolean correct = puzzleSolver.checkSolution(selectedRow, selectedCol, cursorRow, cursorCol);
-                        Piece.MoveResult result = board.makeMove(selectedRow, selectedCol, cursorRow, cursorCol);
-                        boolean mated = puzzleSolver.checkIfCheckmate(board, whiteToMove);
-
-                        if (correct || mated)
-                        {
-                            whitePlayer.addPuzzleSolved();
-                            statusMessage = "Correct! Press N for next puzzle";
-                            statusTimer = 300;
-                            pieceSelected = false;
-                            board.clearHighlights();
-                            currentLegalMoves.clear();
-                        } 
-                        else
-                        {
-                            statusMessage = "Incorrect. Press R to retry";
-                            statusTimer = 300;
-                            pieceSelected = false;
-                            board.clearHighlights();
-                            currentLegalMoves.clear();
-                        }
-                    } 
-                    else
-                    {
-                        Piece.MoveResult result = board.makeMove(selectedRow, selectedCol, cursorRow, cursorCol);
-                        if (result != null && result.isValid)
-                        {
-                            pieceSelected = false;
-                            board.clearHighlights();
-                            currentLegalMoves.clear();
-
-                            whiteToMove = !whiteToMove;
-                            boardFlipped = !boardFlipped;
-
-                            if (result.isCapture && result.capturedPiece != null)
-                            {
-                                List<Piece> captured = new ArrayList<>();
-                                captured.sort((p1, p2) -> p2.getPointValue() - p1.getPointValue());
-                            }
-
-                            if (board.isCheckmate(whiteToMove))
-                            {
-                                gameState.isCheckmate = true;
-                                gameOver = true;
-                                if (whiteToMove)
-                                {
-                                    blackPlayer.addWin();
-                                    whitePlayer.addLoss();
-                                    statusMessage = "Checkmate! Black wins! (R=restart, M=menu)";
-                                } 
-                                else
-                                {
-                                    whitePlayer.addWin();
-                                    blackPlayer.addLoss();
-                                    statusMessage = "Checkmate! White wins! (R=restart, M=menu)";
-                                }
-                                statusTimer = 600;
-                            } 
-                            else if (board.isStalemate(whiteToMove))
-                            {
-                                gameState.isStalemate = true;
-                                gameOver = true;
-                                statusMessage = "Stalemate! Draw! (R=restart, M=menu)";
-                                statusTimer = 600;
-                            } 
-                            else if (board.isInCheck(whiteToMove))
-                            {
-                                gameState.isCheck = true;
-                                statusMessage = (whiteToMove ? "White" : "Black") + " is in CHECK!";
-                                statusTimer = 90;
-                            } 
-                            else
-                            {
-                                gameState.isCheck = false;
-                                statusMessage = (whiteToMove ? "White" : "Black") + "'s turn";
-                                statusTimer = 60;
-                            }
-                        }
-                    }
-                } 
+                    startMoveAnimation(selectedRow, selectedCol, cursorRow, cursorCol);
+                }
                 else
                 {
                     Piece piece = board.getPiece(cursorRow, cursorCol);
@@ -346,6 +316,135 @@ public class ChessGame extends Game
         }
     }
 
+    /**
+     * Starts the sliding animation for a move, also makes
+     * the actual move on the board backend
+     * @param fromRow
+     * @param fromCol
+     * @param toRow
+     * @param toCol
+     */
+    private void startMoveAnimation(int fromRow, int fromCol, int toRow, int toCol)
+    {
+        Piece movingPiece = board.getPiece(fromRow, fromCol);
+        animSymbol = movingPiece.getSymbol();
+        animPieceWhite = movingPiece.isWhite();
+        animToRow = toRow;
+        animToCol = toCol;
+
+        animStartX = BOARD_OFFSET_X + fromCol * SQUARE_SIZE;
+        animStartY = BOARD_OFFSET_Y + fromRow * SQUARE_SIZE;
+        animEndX = BOARD_OFFSET_X + toCol * SQUARE_SIZE;
+        animEndY = BOARD_OFFSET_Y + toRow * SQUARE_SIZE;
+
+        Piece targetPiece = board.getPiece(toRow, toCol);
+        hasCapture = (targetPiece != null && targetPiece.isWhite() != movingPiece.isWhite());
+        if (hasCapture)
+        {
+            captureSymbol = targetPiece.getSymbol();
+            capturePieceWhite = targetPiece.isWhite();
+            captureCenterX = animEndX + SQUARE_SIZE / 2.0;
+            captureCenterY = animEndY + SQUARE_SIZE / 2.0;
+        }
+
+        if (puzzleMode)
+        {
+            boolean correct = puzzleSolver.checkSolution(fromRow, fromCol, toRow, toCol);
+            board.makeMove(fromRow, fromCol, toRow, toCol);
+            boolean mated = puzzleSolver.checkIfCheckmate(board, whiteToMove);
+            pendingPuzzleFinish = true;
+            pendingPuzzleSuccess = correct || mated;
+            pendingNormalFinish = false;
+        }
+        else
+        {
+            board.makeMove(fromRow, fromCol, toRow, toCol);
+            pendingNormalFinish = true;
+            pendingPuzzleFinish = false;
+        }
+
+        pieceSelected = false;
+        board.clearHighlights();
+        currentLegalMoves.clear();
+
+        animating = true;
+        animProgress = 0;
+        spinning = false;
+    }
+
+    /**
+     * Runs when animation is done, switches turns and checks
+     * for checkmate/stalemate/check. Also handles puzzle results
+     */
+    private void finishAnimation()
+    {
+        animating = false;
+        spinning = false;
+
+        if (pendingNormalFinish)
+        {
+            pendingNormalFinish = false;
+            whiteToMove = !whiteToMove;
+
+            if (board.isCheckmate(whiteToMove))
+            {
+                gameState.isCheckmate = true;
+                gameOver = true;
+                if (whiteToMove)
+                {
+                    blackPlayer.addWin();
+                    whitePlayer.addLoss();
+                    statusMessage = "Checkmate! Black wins! (R=restart, M=menu)";
+                }
+                else
+                {
+                    whitePlayer.addWin();
+                    blackPlayer.addLoss();
+                    statusMessage = "Checkmate! White wins! (R=restart, M=menu)";
+                }
+                statusTimer = 600;
+            }
+            else if (board.isStalemate(whiteToMove))
+            {
+                gameState.isStalemate = true;
+                gameOver = true;
+                statusMessage = "Stalemate! Draw! (R=restart, M=menu)";
+                statusTimer = 600;
+            }
+            else if (board.isInCheck(whiteToMove))
+            {
+                gameState.isCheck = true;
+                statusMessage = (whiteToMove ? "White" : "Black") + " is in CHECK!";
+                statusTimer = 90;
+            }
+            else
+            {
+                gameState.isCheck = false;
+                statusMessage = (whiteToMove ? "White" : "Black") + "'s turn";
+                statusTimer = 60;
+            }
+        }
+
+        if (pendingPuzzleFinish)
+        {
+            pendingPuzzleFinish = false;
+            if (pendingPuzzleSuccess)
+            {
+                whitePlayer.addPuzzleSolved();
+                statusMessage = "Correct! Press N for next puzzle";
+                statusTimer = 300;
+            }
+            else
+            {
+                statusMessage = "Incorrect. Press R to retry";
+                statusTimer = 300;
+            }
+        }
+    }
+
+    /**
+     * Resets everything back to a fresh game
+     */
     private void resetGame()
     {
         board.setupStandardBoard();
@@ -360,137 +459,292 @@ public class ChessGame extends Game
         gameState.isCheck = false;
         gameState.isCheckmate = false;
         gameState.isStalemate = false;
+        animating = false;
+        spinning = false;
         statusMessage = "Game reset - White's turn";
         statusTimer = 90;
     }
 
+    /**
+     * Overrides update so it doesnt flicker
+     */
     @Override
     public void update(Graphics g)
     {
         paint(g);
     }
 
+    /**
+     * Draws everything to an offscreen image then puts it on screen
+     * (double buffering)
+     * @param brush
+     */
     @Override
-    public void paint(Graphics brush) //doneish*
+    public void paint(Graphics brush)
     {
-        Graphics2D g2 = (Graphics2D) brush;
-        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-
-        g2.setColor(new Color(40, 40, 45));
-        g2.fillRect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
-
-        if (showMenu)
+        if (offscreen == null)
         {
-            drawMenu(g2);
+            offscreen = createImage(WINDOW_WIDTH, WINDOW_HEIGHT);
+        }
+        if (offscreen == null)
+        {
             return;
         }
 
-        this.board.drawBoard(g2, BOARD_OFFSET_X, BOARD_OFFSET_Y, SQUARE_SIZE, boardFlipped, whiteToMove);
-        drawCursor(g2);
-        drawSelection(g2);
-        drawSidebar(g2);
-        drawStatusBar(g2);
+        Graphics g = offscreen.getGraphics();
+
+        g.setColor(new Color(40, 40, 45));
+        g.fillRect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+
+        if (board == null)
+        {
+            brush.drawImage(offscreen, 0, 0, null);
+            g.dispose();
+            return;
+        }
+
+        if (showMenu)
+        {
+            drawMenu(g);
+            brush.drawImage(offscreen, 0, 0, null);
+            g.dispose();
+            return;
+        }
+
+        this.board.drawBoard(g, BOARD_OFFSET_X, BOARD_OFFSET_Y, SQUARE_SIZE, boardFlipped, whiteToMove);
+
+        if (animating)
+        {
+            animProgress += 0.07;
+            double t = animProgress;
+            if (t > 1.0) t = 1.0;
+
+            double currentX = animStartX + (animEndX - animStartX) * t;
+            double currentY = animStartY + (animEndY - animStartY) * t;
+
+            coverSquare(g, animToRow, animToCol);
+
+            if (hasCapture && !spinning)
+            {
+                Font pieceFont = new Font("Serif", Font.PLAIN, (int)(SQUARE_SIZE * 0.75));
+                g.setFont(pieceFont);
+                FontMetrics fm = g.getFontMetrics();
+                int fontH = fm.getHeight();
+                int halfH = fontH / 2;
+                int halfW = fm.stringWidth(animSymbol) / 2;
+
+                double moveCX = currentX + SQUARE_SIZE / 2.0;
+                double moveCY = currentY + SQUARE_SIZE / 2.0;
+
+                Point[] movePts = {
+                    new Point(-halfW, -halfH), new Point(halfW, -halfH),
+                    new Point(halfW, halfH), new Point(-halfW, halfH)
+                };
+                Polygon movePoly = new Polygon(movePts, new Point(moveCX, moveCY), 0);
+
+                int captHalfW = fm.stringWidth(captureSymbol) / 2;
+                Point[] targetPts = {
+                    new Point(-captHalfW, -halfH), new Point(captHalfW, -halfH),
+                    new Point(captHalfW, halfH), new Point(-captHalfW, halfH)
+                };
+                Polygon targetPoly = new Polygon(targetPts, new Point(captureCenterX, captureCenterY), 0);
+
+                if (movePoly.collides(targetPoly))
+                {
+                    spinning = true;
+                    spinAngle = 0;
+                    int half = SQUARE_SIZE / 2;
+                    Point[] spinPts = {
+                        new Point(-half, -half), new Point(half, -half),
+                        new Point(half, half), new Point(-half, half)
+                    };
+                    spinPolygon = new Polygon(spinPts, new Point(captureCenterX, captureCenterY), 0);
+                }
+            }
+
+            if (spinning)
+            {
+                spinAngle += 15;
+                double spinT = spinAngle / 360.0;
+                double floatY = captureCenterY - spinT * SQUARE_SIZE;
+                spinPolygon.setPosition(new Point(captureCenterX, floatY));
+                spinPolygon.setRotation(spinAngle);
+                int alpha = Math.max(0, (int)(255 * (1.0 - spinT)));
+                g.setColor(capturePieceWhite ? new Color(255, 255, 200, alpha) : new Color(80, 80, 120, alpha));
+                spinPolygon.paint(g);
+                Font spinFont = new Font("Serif", Font.PLAIN, (int)(SQUARE_SIZE * 0.75));
+                g.setFont(spinFont);
+                FontMetrics sfm = g.getFontMetrics();
+                int tw = sfm.stringWidth(captureSymbol);
+                int th = sfm.getAscent();
+                int dx = (int)captureCenterX - tw / 2;
+                int dy = (int)floatY + th / 2 - sfm.getDescent();
+                g.setColor(capturePieceWhite ? new Color(255, 255, 255, alpha) : new Color(0, 0, 0, alpha));
+                g.drawString(captureSymbol, dx, dy);
+            }
+
+            drawPieceAt(g, animSymbol, animPieceWhite, (int)currentX, (int)currentY);
+
+            boolean spinDone = !spinning || spinAngle >= 360;
+            if (t >= 1.0 && spinDone)
+            {
+                finishAnimation();
+            }
+        }
+
+        if (!animating)
+        {
+            drawCursor(g);
+            drawSelection(g);
+        }
+        drawSidebar(g);
+        drawStatusBar(g);
 
         if (statusTimer > 0)
         {
             statusTimer--;
         }
+
+        brush.drawImage(offscreen, 0, 0, null);
+        g.dispose();
     }
 
-    private void drawMenu(Graphics2D g2) //redone
+    /**
+     * Paints over a square during animation so the old piece
+     * doesnt show through
+     */
+    private void coverSquare(Graphics g, int row, int col)
     {
-        g2.setBackground(Color.BLACK);
-        g2.fillRect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+        int sx = BOARD_OFFSET_X + col * SQUARE_SIZE;
+        int sy = BOARD_OFFSET_Y + row * SQUARE_SIZE;
+        boolean isLight = (row + col) % 2 == 0;
+        if (isLight)
+            g.setColor(new Color(240, 217, 181));
+        else
+            g.setColor(new Color(181, 136, 99));
+        g.fillRect(sx, sy, SQUARE_SIZE, SQUARE_SIZE);
+    }
 
-        g2.setColor(new Color(255, 255, 255));
-        g2.setFont(new Font("Serif", Font.BOLD, 56));
-        FontMetrics fm = g2.getFontMetrics();
+    /**
+     * Draws a piece at a pixel position, used for the animation
+     */
+    private void drawPieceAt(Graphics g, String symbol, boolean isWhite, int x, int y)
+    {
+        Font pieceFont = new Font("Serif", Font.PLAIN, (int)(SQUARE_SIZE * 0.75));
+        g.setFont(pieceFont);
+        FontMetrics fm = g.getFontMetrics();
+        int textWidth = fm.stringWidth(symbol);
+        int textHeight = fm.getAscent();
+        int drawX = x + (SQUARE_SIZE - textWidth) / 2;
+        int drawY = y + (SQUARE_SIZE + textHeight) / 2 - fm.getDescent();
+        g.setColor(isWhite ? Color.WHITE : Color.BLACK);
+        g.drawString(symbol, drawX, drawY);
+    }
+
+    /**
+     * Draws the menu screen with title, options, and controls
+     */
+    private void drawMenu(Graphics g)
+    {
+        g.setColor(Color.BLACK);
+        g.fillRect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+
+        g.setColor(new Color(255, 255, 255));
+        g.setFont(new Font("Serif", Font.BOLD, 56));
+        FontMetrics fm = g.getFontMetrics();
         String title = "Two Player Chess";
-        g2.drawString(title, (WINDOW_WIDTH - fm.stringWidth(title)) / 2, 140);
+        g.drawString(title, (WINDOW_WIDTH - fm.stringWidth(title)) / 2, 140);
 
-        g2.setFont(new Font("SansSerif", Font.BOLD, 22));
-        fm = g2.getFontMetrics();
+        g.setFont(new Font("SansSerif", Font.BOLD, 22));
+        fm = g.getFontMetrics();
 
         String[] options = {"Click 1 -> New Chess Game", "Click 2 -> Puzzles"};
 
         int boxW = 380;
         int boxX = (WINDOW_WIDTH - boxW) / 2;
 
-        g2.setColor(new Color(60, 55, 75, 200));
-        g2.fillRoundRect(boxX, 200, boxW, 50, 15, 15);
-        g2.setColor(new Color(230, 230, 240));
-        g2.drawString(options[0], boxX + (boxW - fm.stringWidth(options[0])) / 2, 232);
+        g.setColor(new Color(60, 55, 75, 200));
+        g.fillRoundRect(boxX, 200, boxW, 50, 15, 15);
+        g.setColor(new Color(230, 230, 240));
+        g.drawString(options[0], boxX + (boxW - fm.stringWidth(options[0])) / 2, 232);
 
-        g2.setColor(new Color(60, 55, 75, 200));
-        g2.fillRoundRect(boxX, 260, boxW, 50, 15, 15);
-        g2.setColor(new Color(230, 230, 240));
-        g2.drawString(options[1], boxX + (boxW - fm.stringWidth(options[1])) / 2, 292);
+        g.setColor(new Color(60, 55, 75, 200));
+        g.fillRoundRect(boxX, 260, boxW, 50, 15, 15);
+        g.setColor(new Color(230, 230, 240));
+        g.drawString(options[1], boxX + (boxW - fm.stringWidth(options[1])) / 2, 292);
 
-        g2.setFont(new Font("SansSerif", Font.PLAIN, 14));
-        g2.setColor(new Color(255, 255, 255));
-        fm = g2.getFontMetrics();
+        g.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        g.setColor(new Color(255, 255, 255));
+        fm = g.getFontMetrics();
 
-
-
-        String[] controls ={"How to Play: ", "Arrow Keys = Move Position", "Enter/Space = Select", "H = Hint (Puzzle)","ESC = Menu", "R = Restart","N = Next Puzzle"};
+        String[] controls = {"How to Play: ", "Arrow Keys = Move Position", "Enter/Space = Select", "H = Hint (Puzzle)", "ESC = Menu", "R = Restart", "N = Next Puzzle"};
         int cy = 530;
         for (String line : controls)
         {
-            g2.drawString(line, (WINDOW_WIDTH - fm.stringWidth(line)) / 2, cy);
+            g.drawString(line, (WINDOW_WIDTH - fm.stringWidth(line)) / 2, cy);
             cy += 22;
         }
 
-        g2.setFont(new Font("SansSerif", Font.ITALIC, 12));
-        g2.setColor(new Color(120, 120, 140));
-        fm = g2.getFontMetrics();
+        g.setFont(new Font("SansSerif", Font.ITALIC, 12));
+        g.setColor(new Color(120, 120, 140));
+        fm = g.getFontMetrics();
         String credit = "CMSC132 Project - Justin Liao & Ganeshan Venu";
-        g2.drawString(credit, (WINDOW_WIDTH - fm.stringWidth(credit)) / 2, WINDOW_HEIGHT - 30);
+        g.drawString(credit, (WINDOW_WIDTH - fm.stringWidth(credit)) / 2, WINDOW_HEIGHT - 30);
 
-        drawPlayerStats(g2, 620);
+        drawPlayerStats(g, 620);
     }
 
-    private void drawPlayerStats(Graphics2D g2, int startY) //redone
+    /**
+     * Shows player stats on the menu if theres any to show
+     */
+    private void drawPlayerStats(Graphics g, int startY)
     {
         if (whitePlayer.getWins() == 0 && blackPlayer.getWins() == 0 && whitePlayer.getPuzzlesSolved() == 0)
         {
             return;
         }
 
-        g2.setFont(new Font("SansSerif", Font.BOLD, 14));
-        g2.setColor(new Color(200, 200, 210));
-        FontMetrics fm = g2.getFontMetrics();
+        g.setFont(new Font("SansSerif", Font.BOLD, 14));
+        g.setColor(new Color(200, 200, 210));
+        FontMetrics fm = g.getFontMetrics();
         String header = "Player Stats";
-        g2.drawString(header, (WINDOW_WIDTH - fm.stringWidth(header)) / 2, startY);
+        g.drawString(header, (WINDOW_WIDTH - fm.stringWidth(header)) / 2, startY);
 
-        g2.setFont(new Font("SansSerif", Font.PLAIN, 13));
-        g2.setColor(new Color(170, 170, 190));
-        fm = g2.getFontMetrics();
+        g.setFont(new Font("SansSerif", Font.PLAIN, 13));
+        g.setColor(new Color(170, 170, 190));
+        fm = g.getFontMetrics();
 
         String wStats = "White - W:" + whitePlayer.getWins() + " L:" + whitePlayer.getLosses() + " Puzzles:" + whitePlayer.getPuzzlesSolved();
         String bStats = "Black - W:" + blackPlayer.getWins() + " L:" + blackPlayer.getLosses();
-        g2.drawString(wStats, (WINDOW_WIDTH - fm.stringWidth(wStats)) / 2, startY + 22);
-        g2.drawString(bStats, (WINDOW_WIDTH - fm.stringWidth(bStats)) / 2, startY + 42);
+        g.drawString(wStats, (WINDOW_WIDTH - fm.stringWidth(wStats)) / 2, startY + 22);
+        g.drawString(bStats, (WINDOW_WIDTH - fm.stringWidth(bStats)) / 2, startY + 42);
     }
 
-    private void drawCursor(Graphics2D g2) //redone
+    /**
+     * Draws the yellow cursor box where the player is hovering
+     */
+    private void drawCursor(Graphics g)
     {
         int displayRow = boardFlipped ? 7 - cursorRow : cursorRow;
         int displayCol = boardFlipped ? 7 - cursorCol : cursorCol;
         int sx = BOARD_OFFSET_X + displayCol * SQUARE_SIZE;
         int sy = BOARD_OFFSET_Y + displayRow * SQUARE_SIZE;
 
-        g2.setColor(new Color(255, 255, 100, 100));
-        g2.fillRect(sx, sy, SQUARE_SIZE, SQUARE_SIZE);
+        g.setColor(new Color(255, 255, 100, 100));
+        g.fillRect(sx, sy, SQUARE_SIZE, SQUARE_SIZE);
 
-        g2.setColor(new Color(255, 255, 0));
-        g2.setStroke(new BasicStroke(3));
-        g2.drawRect(sx + 1, sy + 1, SQUARE_SIZE - 2, SQUARE_SIZE - 2);
+        g.setColor(new Color(255, 255, 0));
+        g.drawRect(sx + 1, sy + 1, SQUARE_SIZE - 2, SQUARE_SIZE - 2);
+        g.drawRect(sx + 2, sy + 2, SQUARE_SIZE - 4, SQUARE_SIZE - 4);
+        g.drawRect(sx + 3, sy + 3, SQUARE_SIZE - 6, SQUARE_SIZE - 6);
     }
 
-    private void drawSelection(Graphics2D g2) //redone
+    /**
+     * Draws the blue highlight on the selected piece's square
+     */
+    private void drawSelection(Graphics g)
     {
-        if (!pieceSelected) 
+        if (!pieceSelected)
             return;
 
         int displayRow = boardFlipped ? 7 - selectedRow : selectedRow;
@@ -498,65 +752,69 @@ public class ChessGame extends Game
         int sx = BOARD_OFFSET_X + displayCol * SQUARE_SIZE;
         int sy = BOARD_OFFSET_Y + displayRow * SQUARE_SIZE;
 
-        g2.setColor(new Color(0, 150, 255, 120));
-        g2.fillRect(sx, sy, SQUARE_SIZE, SQUARE_SIZE);
+        g.setColor(new Color(0, 150, 255, 120));
+        g.fillRect(sx, sy, SQUARE_SIZE, SQUARE_SIZE);
 
-        g2.setColor(new Color(0, 150, 255));
-        g2.setStroke(new BasicStroke(3));
-        g2.drawRect(sx + 1, sy + 1, SQUARE_SIZE - 2, SQUARE_SIZE - 2);
+        g.setColor(new Color(0, 150, 255));
+        g.drawRect(sx + 1, sy + 1, SQUARE_SIZE - 2, SQUARE_SIZE - 2);
+        g.drawRect(sx + 2, sy + 2, SQUARE_SIZE - 4, SQUARE_SIZE - 4);
+        g.drawRect(sx + 3, sy + 3, SQUARE_SIZE - 6, SQUARE_SIZE - 6);
     }
 
-    private void drawSidebar(Graphics2D g2) //redone
+    /**
+     * Draws the panel on the right with turn info, puzzle info, etc
+     */
+    private void drawSidebar(Graphics g)
     {
         int sideX = BOARD_OFFSET_X + SQUARE_SIZE * 8 + 25;
         int sideY = BOARD_OFFSET_Y;
 
-        g2.setColor(new Color(55, 55, 65));
-        g2.fillRoundRect(sideX, sideY, 195, SQUARE_SIZE * 8, 10, 10);
-        g2.setColor(new Color(80, 80, 95));
-        g2.drawRoundRect(sideX, sideY, 195, SQUARE_SIZE * 8, 10, 10);
+        g.setColor(new Color(55, 55, 65));
+        g.fillRoundRect(sideX, sideY, 195, SQUARE_SIZE * 8, 10, 10);
+        g.setColor(new Color(80, 80, 95));
+        g.drawRoundRect(sideX, sideY, 195, SQUARE_SIZE * 8, 10, 10);
 
-        g2.setFont(new Font("SansSerif", Font.BOLD, 16));
-        g2.setColor(new Color(230, 230, 240));
+        g.setFont(new Font("SansSerif", Font.BOLD, 16));
+        g.setColor(new Color(230, 230, 240));
 
         if (puzzleMode)
         {
-            g2.drawString("Puzzle Mode", sideX + 15, sideY + 30);
-            g2.setFont(new Font("SansSerif", Font.PLAIN, 13));
-            g2.setColor(new Color(180, 180, 200));
-            g2.drawString("Puzzle #" + (puzzleLoader.getCurrentPuzzle() + 1), sideX + 15, sideY + 55);
-            g2.drawString("Solved: " + whitePlayer.getPuzzlesSolved(), sideX + 15, sideY + 75);
+            g.drawString("Puzzle Mode", sideX + 15, sideY + 30);
+            g.setFont(new Font("SansSerif", Font.PLAIN, 13));
+            g.setColor(new Color(180, 180, 200));
+            g.drawString("Puzzle #" + (puzzleLoader.getCurrentPuzzle() + 1), sideX + 15, sideY + 55);
+            g.drawString("Solved: " + whitePlayer.getPuzzlesSolved(), sideX + 15, sideY + 75);
 
-            g2.setColor(new Color(150, 150, 170));
-            g2.setFont(new Font("SansSerif", Font.PLAIN, 11));
-            g2.drawString("H = Hint", sideX + 15, sideY + 105);
-            g2.drawString("N = Next Puzzle", sideX + 15, sideY + 122);
-            g2.drawString("R = Retry", sideX + 15, sideY + 139);
-        } 
+            g.setColor(new Color(150, 150, 170));
+            g.setFont(new Font("SansSerif", Font.PLAIN, 11));
+            g.drawString("H = Hint", sideX + 15, sideY + 105);
+            g.drawString("N = Next Puzzle", sideX + 15, sideY + 122);
+            g.drawString("R = Retry", sideX + 15, sideY + 139);
+        }
         else
         {
             String turnText = whiteToMove ? "White's Turn" : "Black's Turn";
-            g2.drawString(turnText, sideX + 15, sideY + 30);
+            g.drawString(turnText, sideX + 15, sideY + 30);
 
             if (gameState.isCheck && !gameState.isCheckmate)
             {
-                g2.setColor(new Color(255, 100, 100));
-                g2.setFont(new Font("SansSerif", Font.BOLD, 14));
-                g2.drawString("CHECK!", sideX + 15, sideY + 55);
+                g.setColor(new Color(255, 100, 100));
+                g.setFont(new Font("SansSerif", Font.BOLD, 14));
+                g.drawString("CHECK!", sideX + 15, sideY + 55);
             }
 
-            g2.setColor(new Color(200, 200, 210));
-            g2.setFont(new Font("SansSerif", Font.BOLD, 13));
-            g2.drawString("Captured:", sideX + 15, sideY + 90);
+            g.setColor(new Color(200, 200, 210));
+            g.setFont(new Font("SansSerif", Font.BOLD, 13));
+            g.drawString("Captured:", sideX + 15, sideY + 90);
 
-            g2.setFont(new Font("Serif", Font.PLAIN, 22));
+            g.setFont(new Font("Serif", Font.PLAIN, 22));
             List<Piece> bCap = new ArrayList<>();
             int cx = sideX + 15;
             int cy = sideY + 115;
             for (int i = 0; i < bCap.size(); i++)
             {
-                g2.setColor(new Color(100, 100, 100));
-                g2.drawString(bCap.get(i).getSymbol(), cx, cy);
+                g.setColor(new Color(100, 100, 100));
+                g.drawString(bCap.get(i).getSymbol(), cx, cy);
                 cx += 22;
                 if (cx > sideX + 175)
                 {
@@ -570,8 +828,8 @@ public class ChessGame extends Game
             List<Piece> wCap = new ArrayList<>();
             for (int i = 0; i < wCap.size(); i++)
             {
-                g2.setColor(new Color(220, 220, 220));
-                g2.drawString(wCap.get(i).getSymbol(), cx, cy);
+                g.setColor(new Color(220, 220, 220));
+                g.drawString(wCap.get(i).getSymbol(), cx, cy);
                 cx += 22;
                 if (cx > sideX + 175)
                 {
@@ -580,52 +838,58 @@ public class ChessGame extends Game
                 }
             }
 
-            g2.setColor(new Color(150, 150, 170));
-            g2.setFont(new Font("SansSerif", Font.PLAIN, 11));
+            g.setColor(new Color(150, 150, 170));
+            g.setFont(new Font("SansSerif", Font.PLAIN, 11));
             int infoY = sideY + SQUARE_SIZE * 8 - 85;
-            g2.drawString("R = Restart", sideX + 15, infoY);
-            g2.drawString("ESC = Menu", sideX + 15, infoY + 17);
+            g.drawString("R = Restart", sideX + 15, infoY);
+            g.drawString("ESC = Menu", sideX + 15, infoY + 17);
         }
     }
 
-    private void drawStatusBar(Graphics2D g2) //redone
+    /**
+     * Draws the bar at the bottom with status messages
+     */
+    private void drawStatusBar(Graphics g)
     {
         int barY = BOARD_OFFSET_Y + SQUARE_SIZE * 8 + 25;
 
-        g2.setColor(new Color(50, 50, 60));
-        g2.fillRoundRect(BOARD_OFFSET_X, barY, SQUARE_SIZE * 8, 35, 8, 8);
+        g.setColor(new Color(50, 50, 60));
+        g.fillRoundRect(BOARD_OFFSET_X, barY, SQUARE_SIZE * 8, 35, 8, 8);
 
         if (statusMessage.length() > 0 && statusTimer > 0)
         {
-            g2.setFont(new Font("SansSerif", Font.BOLD, 14));
+            g.setFont(new Font("SansSerif", Font.BOLD, 14));
 
             if (statusMessage.contains("Checkmate") || statusMessage.contains("CHECK"))
             {
-                g2.setColor(new Color(255, 100, 100));
-            } 
+                g.setColor(new Color(255, 100, 100));
+            }
             else if (statusMessage.contains("Correct") || statusMessage.contains("wins"))
             {
-                g2.setColor(new Color(100, 255, 100));
-            } 
+                g.setColor(new Color(100, 255, 100));
+            }
             else if (statusMessage.contains("Incorrect"))
             {
-                g2.setColor(new Color(255, 150, 50));
-            } 
+                g.setColor(new Color(255, 150, 50));
+            }
             else
             {
-                g2.setColor(new Color(200, 200, 220));
+                g.setColor(new Color(200, 200, 220));
             }
 
-            FontMetrics fm = g2.getFontMetrics();
-            g2.drawString(statusMessage, BOARD_OFFSET_X + (SQUARE_SIZE * 8 - fm.stringWidth(statusMessage)) / 2, barY + 23);
+            FontMetrics fm = g.getFontMetrics();
+            g.drawString(statusMessage, BOARD_OFFSET_X + (SQUARE_SIZE * 8 - fm.stringWidth(statusMessage)) / 2, barY + 23);
         }
 
-        g2.setFont(new Font("SansSerif", Font.PLAIN, 11));
-        g2.setColor(new Color(120, 120, 140));
+        g.setFont(new Font("SansSerif", Font.PLAIN, 11));
+        g.setColor(new Color(120, 120, 140));
         String pos = (char)('a' + cursorCol) + "" + (8 - cursorRow);
-        g2.drawString(pos, BOARD_OFFSET_X + SQUARE_SIZE * 8 - 25, barY + 23);
+        g.drawString(pos, BOARD_OFFSET_X + SQUARE_SIZE * 8 - 25, barY + 23);
     }
 
+    /**
+     * Main method, starts the game
+     */
     public static void main(String[] args)
     {
         new ChessGame();

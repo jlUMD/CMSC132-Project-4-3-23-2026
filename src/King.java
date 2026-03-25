@@ -1,28 +1,52 @@
 import java.util.ArrayList;
 
+/**
+ * The king piece, moves one square any direction and can castle
+ * @author ganesh
+ *
+ */
 public class King extends Piece
 {
 
+    /**
+     * Creates king object
+     * @param isWhite
+     * @param boardRow
+     * @param boardCol
+     */
     public King(boolean isWhite, int boardRow, int boardCol)
     {
         super(isWhite, boardRow, boardCol, 0, "King");
     }
 
+    /**
+     * Gets the unicode symbol for king
+     */
     @Override
     public String getSymbol()
     {
         return isWhite() ? "\u2654" : "\u265A";
     }
 
+    /**
+     * Checks if king can move to target, one square any direction
+     * or two squares for castling
+     * @param row
+     * @param col
+     * @param board
+     * @return
+     */
     @Override
     public boolean canMoveTo(int row, int col, Board board)
     {
         int dRow = Math.abs(row - getBoardRow());
         int dCol = Math.abs(col - getBoardCol());
+        // normal king move
         if (dRow <= 1 && dCol <= 1 && (dRow + dCol) > 0 && isValidTarget(row, col, board))
         {
             return true;
         }
+        // castle move
         if (!hasMoved() && dRow == 0 && Math.abs(col - getBoardCol()) == 2)
         {
             return canCastle(col, board);
@@ -30,6 +54,11 @@ public class King extends Piece
         return false;
     }
 
+    /**
+     * Gets all possible king moves including castles
+     * @param board
+     * @return
+     */
     @Override
     public Point[] getPossibleMoves(Board board)
     {
@@ -45,6 +74,7 @@ public class King extends Piece
                 moves.add(new Point(nr, nc));
             }
         }
+        // castling
         if (!hasMoved())
         {
             if (canCastle(getBoardCol() + 2, board))
@@ -59,10 +89,18 @@ public class King extends Piece
         return moves.toArray(new Point[0]);
     }
 
+    /**
+     * Checks if king can castle to the target side. Rook has to be there
+     * and neither piece can have moved, and nothing in between
+     * @param targetCol
+     * @param board
+     * @return
+     */
     private boolean canCastle(int targetCol, Board board)
     {
         if (hasMoved()) return false;
         int row = getBoardRow();
+        // kingside
         if (targetCol == getBoardCol() + 2)
         {
             Piece rook = board.getPiece(row, 7);
@@ -76,6 +114,7 @@ public class King extends Piece
             }
             return true;
         }
+        // queenside
         if (targetCol == getBoardCol() - 2)
         {
             Piece rook = board.getPiece(row, 0);

@@ -1,20 +1,32 @@
+/**
+ * Simple point class with x and y, used for positions
+ * @author ganesh
+ *
+ */
 public class Point
 {
 
     public double x;
     public double y;
 
+    /**
+     * Creates a point
+     * @param x
+     * @param y
+     */
     public Point(double x, double y)
     {
         this.x = x;
         this.y = y;
     }
 
+    /** Gets x as int */
     public int getX()
     {
         return (int) x;
     }
 
+    /** Gets y as int */
     public int getY()
     {
         return (int) y;
@@ -26,6 +38,9 @@ public class Point
         return "(" + x + ", " + y + ")";
     }
 
+    /**
+     * Two points are equal if same x and y
+     */
     @Override
     public boolean equals(Object obj)
     {
