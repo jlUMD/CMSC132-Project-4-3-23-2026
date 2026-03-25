@@ -1,21 +1,31 @@
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Handles the backend and board states of the puzzles
+ * @author justi
+ *
+ */
 public class PuzzleLoader
 {
-
+	
+	// Holds different board states
     private List<int[][]> puzzlePieces;
     private List<int[]> puzzleSolutions;
     private int currentPuzzle;
 
     public PuzzleLoader()
     {
+    	// Initialize
         puzzlePieces = new ArrayList<>();
         puzzleSolutions = new ArrayList<>();
         currentPuzzle = 0;
         initPuzzles();
     }
 
+    /**
+     * Loads in prebuilt puzzles into the ArrayList
+     */
     private void initPuzzles()
     {
         int[][] puzzle1Pieces =
@@ -77,16 +87,28 @@ public class PuzzleLoader
         puzzleSolutions.add(new int[]{1, 3, 0, 1, 6});
     }
 
+    /**
+     * Returns total number of puzzles
+     * @return
+     */
     public int getPuzzleCount()
     {
         return puzzlePieces.size();
     }
 
+    /**
+     * Returns current puzzle number
+     * @return
+     */
     public int getCurrentPuzzle()
     {
         return currentPuzzle;
     }
 
+    /** 
+     * Helper method to load a board state
+     * @param board
+     */
     public void loadPuzzle(Board board)
     {
         board.clearBoard();
@@ -109,19 +131,38 @@ public class PuzzleLoader
         }
     }
 
+    /**
+     * Checks the solution using the puzzleSolver class method
+     * @return
+     */
     public int[] getSolution()
     {
-        if (currentPuzzle >= puzzleSolutions.size()) return null;
+        if (currentPuzzle >= puzzleSolutions.size())
+        {
+        	return null;
+        }
         int[] sol = puzzleSolutions.get(currentPuzzle);
         return new int[]{sol[1], sol[2], sol[3], sol[4]};
     }
 
+    /**
+     * Gets the piece needed to move to complete puzzle
+     * Method used specifically for PuzzleSolver
+     * @return
+     */
     public int getSolutionPieceType()
     {
-        if (currentPuzzle >= puzzleSolutions.size()) return -1;
+        if (currentPuzzle >= puzzleSolutions.size())
+        {
+        	return -1;
+        }
         return puzzleSolutions.get(currentPuzzle)[0];
     }
 
+    /**
+     * Gets the next puzzle, goes back to puzzle 0 if last puzzle in list
+     * is finished
+     */
     public void nextPuzzle()
     {
         currentPuzzle++;
@@ -131,17 +172,36 @@ public class PuzzleLoader
         }
     }
 
+    /**
+     * Creates a piece at specified location
+     * @param type - What piece u talking
+     * @param isWhite - duh
+     * @param row - row of placed piece
+     * @param col - column of placed piece
+     * @return
+     */
     private Piece createPiece(int type, boolean isWhite, int row, int col)
     {
-        switch (type)
-        {
-            case 0: return new King(isWhite, row, col);
-            case 1: return new Queen(isWhite, row, col);
-            case 2: return new Rook(isWhite, row, col);
-            case 3: return new Bishop(isWhite, row, col);
-            case 4: return new Knight(isWhite, row, col);
-            case 5: return new Pawn(isWhite, row, col);
-            default: return null;
+        if (type == 0) {
+        	return new King(isWhite, row, col);
+        }
+        else if (type == 1) {
+        	return new Queen(isWhite, row, col);
+        }
+        else if (type == 2) {
+        	return new Rook(isWhite, row, col);
+        }
+        else if (type == 3) {
+        	return new Bishop(isWhite, row, col);
+        }
+        else if (type == 4) {
+        	return new Knight(isWhite, row, col);
+        }
+        else if (type == 5) {
+        	return new Pawn(isWhite, row, col);
+        }
+        else {
+        	return null;
         }
     }
 }

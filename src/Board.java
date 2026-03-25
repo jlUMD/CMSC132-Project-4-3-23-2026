@@ -9,9 +9,22 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * This class creates the board. The board takes care of the array of pieces,
+ * the square tiles, and a few setup and background methods
+ * @author justi
+ *
+ */
 public class Board
 {
 
+	/**
+	 * An inner class specifically for the background tiles. Each tile has a piece
+	 * either null or an actual piece, and has the potential to be 'lighted'
+	 * to show that its being selected
+	 * @author justi
+	 *
+	 */
     private class Square
     {
         Piece pieceHere;
@@ -237,13 +250,13 @@ public class Board
         // There is no piece
         if (pieceMoved == null)
         {
-        	return pieceMoved.new MoveResult(false, false, null);
+        	return new Piece.MoveResult(false, false, null);
         }
         
         // Invalid move
         if (!pieceMoved.canMoveTo(toRow, toCol, this))
         {
-            return pieceMoved.new MoveResult(false, false, null);
+            return new Piece.MoveResult(false, false, null);
         }
 
         // Checks for en passant rules (this might not work correctly)
@@ -262,6 +275,7 @@ public class Board
             captured = removePiece(toRow, toCol);
             isCapture = true;
         }
+        
 
         // Takes the pawn away from the original spot in 2d array
         removePiece(fromRow, fromCol);
@@ -311,7 +325,7 @@ public class Board
             }
         }
 
-        return pieceMoved.new MoveResult(true, isCapture, captured);
+        return new Piece.MoveResult(true, isCapture, captured);
     }
 
 
@@ -334,37 +348,22 @@ public class Board
         	return false;
         }
 
-//        Piece captured = getPiece(toRow, toCol);
-//        Piece enPassantCaptured = null;
-//
-//        if (piece instanceof Pawn && Math.abs(toCol - fromCol) == 1 && captured == null)
-//        {
-//            enPassantCaptured = getPiece(fromRow, toCol);
-//            if (enPassantCaptured != null)
-//            {
-//                squares[fromRow][toCol].pieceHere = null;
-//            }
-//        }
         // Moves the piece while storing important information
         boolean hasItMoved = piece.hasMoved();
         Piece.MoveResult temp = makeMove(fromRow, fromCol, toRow, toCol);
         piece.setHasMoved(hasItMoved);
-//        squares[fromRow][fromCol].pieceHere = null;
-//        Piece originalTarget = squares[toRow][toCol].pieceHere;
-//        squares[toRow][toCol].pieceHere = piece;
-//        int origRow = piece.getBoardRow();
-//        int origCol = piece.getBoardCol();
-//        piece.setBoardRow(toRow);
-//        piece.setBoardCol(toCol);
         
         // Checks if its a safe move
         boolean safeMove = !isInCheck(piece.isWhite());
 
         // Reverts back to before the simulated move
+        squares[toRow][toCol].pieceHere = null;
         piece.setBoardRow(fromRow);
         piece.setBoardCol(fromCol);
-        assignPiece(piece);
-        assignPiece(temp.capturedPiece);
+        squares[fromRow][fromCol].pieceHere = piece;
+        if (temp.capturedPiece != null) {
+            squares[temp.capturedPiece.getBoardRow()][temp.capturedPiece.getBoardCol()].pieceHere = temp.capturedPiece;
+        }
 
 //        if (enPassantCaptured != null)
 //        {
@@ -515,29 +514,6 @@ public class Board
         return legalMoves;
     }
 
-   
-//    public boolean[][] getVisibleSquares(boolean isWhite)
-//    {
-//        boolean[][] visible = new boolean[8][8];
-//        for (int r = 0; r < 8; r++)
-//        {
-//            for (int c = 0; c < 8; c++)
-//            {
-//                Piece p = getPiece(r, c);
-//                if (p != null && p.isWhite() == isWhite)
-//                {
-//                    visible[r][c] = true;
-//                    Point[] moves = p.getPossibleMoves(this);
-//                    for (Point m : moves)
-//                    {
-//                        visible[m.getX()][m.getY()] = true;
-//                    }
-//                }
-//            }
-//        }
-//        return visible;
-//    }
-
     /** 
      * Makes an arraylist of a certain color's pieces on the board
      * @param isWhite -- Color to search
@@ -561,11 +537,23 @@ public class Board
         return pieces;
     }
 
+    
+    /**
+     * This draws the board including the different color squares and calls the
+     * piece's own drawPiece method. This method doesn't return anything and
+     * works on miracles.
+     * @param brush -- The brush is created in ChessGame or Game
+     * @param offsetX -- X Position of the left side of the board (moves right)
+     * @param offsetY -- Y Position of the top of the board (moves down)
+     * @param squareSize -- duh
+     * @param flipped -- It's here even though its undecided if we're going to flip
+     * or not because flipping causes a few problems in other places
+     * @param whiteToMove
+     */
     public void drawBoard(Graphics brush, int offsetX, int offsetY, int squareSize,
                           boolean flipped, boolean whiteToMove)
                           {
-        Graphics2D g2 = (Graphics2D) brush;
-        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        Graphics g2 = (Graphics2D) brush;
 
      
         for (int r = 0; r < 8; r++)
@@ -574,8 +562,8 @@ public class Board
             {
                 int displayRow = flipped ? 7 - r : r;
                 int displayCol = flipped ? 7 - c : c;
-                int sx = offsetX + c * squareSize;
-                int sy = offsetY + r * squareSize;
+                int sx = offsetX + displayCol * squareSize;
+                int sy = offsetY + displayRow * squareSize;
 
                 boolean isLight = (r + c) % 2 == 0;
                 Color lightColor = new Color(240, 217, 181);
@@ -583,13 +571,13 @@ public class Board
                 g2.setColor(isLight ? lightColor : darkColor);
                 g2.fillRect(sx, sy, squareSize, squareSize);
 
-                if (squares[r][c].lighted)
+                if (squares[displayRow][displayCol].lighted)
                 {
                     g2.setColor(new Color(100, 200, 100, 120));
                     g2.fillRect(sx, sy, squareSize, squareSize);
                 }
 
-                Piece piece = squares[r][c].pieceHere;
+                Piece piece = squares[displayRow][displayCol].pieceHere;
                 if (piece != null)
                 {
                         piece.drawPiece(g2, sx, sy, squareSize);
@@ -598,7 +586,6 @@ public class Board
         }
 
         g2.setColor(new Color(60, 40, 20));
-        g2.setStroke(new BasicStroke(2));
         g2.drawRect(offsetX, offsetY, squareSize * 8, squareSize * 8);
 
         g2.setFont(new Font("SansSerif", Font.PLAIN, 12));
@@ -613,7 +600,7 @@ public class Board
         for (int r = 0; r < 8; r++)
         {
             int dr = flipped ? 7 - r : r;
-            String label = String.valueOf(8 - r);
+            String label = String.valueOf(8 - dr);
             g2.drawString(label, offsetX - 15, offsetY + dr * squareSize + squareSize / 2 + 4);
         }
     }

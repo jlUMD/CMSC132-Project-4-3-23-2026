@@ -4,7 +4,7 @@ import java.util.ArrayList;
 public abstract class Piece extends Polygon implements Moveable
 {
 
-    public class MoveResult
+    public static class MoveResult
     {
         public boolean isValid;
         public boolean isCapture;
