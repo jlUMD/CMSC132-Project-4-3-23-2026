@@ -2,17 +2,18 @@ import java.awt.*;
 import java.util.ArrayList;
 
 /**
- * The parent class for all chess pieces. Has all the shared fields
- * and methods that the specific pieces inherit
- * @author ganesh
+ * Abstract class representing a generic chess piece. Extends Polygon for
+ * collision detection and implements Moveable for movement logic. All specific
+ * pieces (King, Queen, etc.) extend this class.
+ * @author ganeshan
  *
  */
 public abstract class Piece extends Polygon implements Moveable
 {
 
     /**
-     * Stores the result of making a move, like if it worked
-     * and if something got captured
+     * Inner class that stores the result of a move, including whether it
+     * was valid, whether it was a capture, and the captured piece if any
      */
     public static class MoveResult
     {
@@ -21,7 +22,10 @@ public abstract class Piece extends Polygon implements Moveable
         public Piece capturedPiece;
 
         /**
-         * Creates MoveResult object
+         * Creates a MoveResult with the given move information
+         * @param isValid -- whether the move was valid
+         * @param isCapture -- whether a piece was captured
+         * @param capturedPiece -- the captured piece, or null
          */
         public MoveResult(boolean isValid, boolean isCapture, Piece capturedPiece)
         {
@@ -39,12 +43,13 @@ public abstract class Piece extends Polygon implements Moveable
     private String pieceName;
 
     /**
-     * Creates piece with all the info it needs
-     * @param isWhite
-     * @param boardRow
-     * @param boardCol
-     * @param pointValue -- how much the piece is worth
-     * @param pieceName
+     * Creates a Piece with color, position, point value, and name. Initializes
+     * the Polygon superclass with a default unit square shape.
+     * @param isWhite -- true if white, false if black
+     * @param boardRow -- row position on the board
+     * @param boardCol -- column position on the board
+     * @param pointValue -- the piece's material value (e.g. 1 for pawn, 9 for queen)
+     * @param pieceName -- the name of the piece (e.g. "King", "Pawn")
      */
     public Piece(boolean isWhite, int boardRow, int boardCol, int pointValue, String pieceName)
     {
@@ -58,39 +63,64 @@ public abstract class Piece extends Polygon implements Moveable
         this.pieceName = pieceName;
     }
 
-    // Getters
+    /**
+     * Returns whether this piece is white
+     * @return boolean -- true if white
+     */
     public boolean isWhite()
     {
         return isWhite;
     }
 
+    /**
+     * Returns the row position of this piece on the board
+     * @return int -- the board row
+     */
     public int getBoardRow()
     {
         return boardRow;
     }
 
+    /**
+     * Returns the column position of this piece on the board
+     * @return int -- the board column
+     */
     public int getBoardCol()
     {
         return boardCol;
     }
 
+    /**
+     * Returns the material point value of this piece
+     * @return int -- the point value
+     */
     public int getPointValue()
     {
         return pointValue;
     }
 
+    /**
+     * Returns whether this piece has moved from its starting position
+     * @return boolean -- true if the piece has moved
+     */
     public boolean hasMoved()
     {
         return hasMoved;
     }
 
+    /**
+     * Returns the name of this piece (e.g. "King", "Queen")
+     * @return String -- the piece name
+     */
     public String getPieceName()
     {
         return pieceName;
     }
 
     /**
-     * Moves piece to new spot and marks it as moved
+     * Moves this piece to the target row and column, and marks it as having moved
+     * @param row -- target row
+     * @param col -- target column
      */
     @Override
     public void moveTo(int row, int col)
@@ -100,34 +130,46 @@ public abstract class Piece extends Polygon implements Moveable
         this.hasMoved = true;
     }
 
-    // Setters (used for undoing simulated moves mostly)
+    /**
+     * Sets the board row of this piece directly (used for reverting moves)
+     * @param row -- the row to set
+     */
     public void setBoardRow(int row)
     {
         this.boardRow = row;
     }
 
+    /**
+     * Sets the board column of this piece directly (used for reverting moves)
+     * @param col -- the column to set
+     */
     public void setBoardCol(int col)
     {
         this.boardCol = col;
     }
 
+    /**
+     * Sets the hasMoved flag directly (used for reverting simulated moves)
+     * @param hasMoved -- true or false
+     */
     public void setHasMoved(boolean hasMoved)
     {
         this.hasMoved = hasMoved;
     }
 
     /**
-     * Each piece has its own unicode symbol
+     * Returns the Unicode symbol representing this piece
+     * @return String -- the piece's Unicode character
      */
     public abstract String getSymbol();
 
     /**
-     * Checks if row, col is a valid spot to move to. Has to be on
-     * the board and not have a friendly piece there
-     * @param row
-     * @param col
-     * @param board
-     * @return
+     * Checks if the target square is a valid destination. Returns true if the
+     * square is in bounds and either empty or occupied by an enemy piece
+     * @param row -- target row
+     * @param col -- target column
+     * @param board -- the current board state
+     * @return boolean -- true if the target is valid
      */
     protected boolean isValidTarget(int row, int col, Board board)
     {
@@ -140,12 +182,13 @@ public abstract class Piece extends Polygon implements Moveable
     }
 
     /**
-     * Slides in one direction and adds all the valid spots.
-     * Used by bishop, rook, and queen
-     * @param moves
-     * @param board
-     * @param dRow -- direction for row
-     * @param dCol -- direction for col
+     * Helper method that adds all sliding moves in a given direction to the
+     * moves list. Used by Bishop, Rook, and Queen. Slides until hitting a
+     * piece or the edge of the board
+     * @param moves -- the list to add valid moves to
+     * @param board -- the current board state
+     * @param dRow -- row direction (-1, 0, or 1)
+     * @param dCol -- column direction (-1, 0, or 1)
      */
     protected void addSlidingMoves(ArrayList<Point> moves, Board board, int dRow, int dCol)
     {
@@ -159,12 +202,12 @@ public abstract class Piece extends Polygon implements Moveable
                 moves.add(new Point(r, c));
             } else if (occupant.isWhite() != this.isWhite)
             {
-                // can capture then stop
+                // Can capture enemy piece, but can't go further
                 moves.add(new Point(r, c));
                 break;
             } else
             {
-                // friendly piece blocking
+                // Blocked by friendly piece
                 break;
             }
             r += dRow;
@@ -173,12 +216,12 @@ public abstract class Piece extends Polygon implements Moveable
     }
 
     /**
-     * Draws the piece symbol on screen, centers it in the square
-     * and does a little shadow thing so it looks nice
-     * @param brush
-     * @param screenX
-     * @param screenY
-     * @param squareSize
+     * Draws this piece on the screen using its Unicode symbol. Centers the
+     * symbol within the square and adds a shadow effect for visibility
+     * @param brush -- the Graphics object to draw with
+     * @param screenX -- the x pixel position of the square
+     * @param screenY -- the y pixel position of the square
+     * @param squareSize -- the size of each square in pixels
      */
     public void drawPiece(Graphics brush, int screenX, int screenY, int squareSize)
     {
@@ -199,6 +242,7 @@ public abstract class Piece extends Polygon implements Moveable
         g2.setColor(isWhite ? Color.WHITE : Color.BLACK);
         g2.drawString(symbol, drawX, drawY);
 
+        // Shadow effect for better visibility
         g2.setColor(isWhite ? Color.DARK_GRAY : Color.GRAY);
         g2.setStroke(new BasicStroke(1.0f));
         g2.drawString(symbol, drawX + 1, drawY + 1);

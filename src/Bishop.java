@@ -1,18 +1,19 @@
 import java.util.ArrayList;
 
 /**
- * The bishop piece, moves diagonally only
- * @author ganesh
+ * Represents a Bishop chess piece. Extends Piece and moves diagonally
+ * any number of squares as long as the path is clear.
+ * @author ganeshan
  *
  */
 public class Bishop extends Piece
 {
 
     /**
-     * Creates bishop object
-     * @param isWhite
-     * @param boardRow
-     * @param boardCol
+     * Creates a Bishop object at the specified board position
+     * @param isWhite -- true if white, false if black
+     * @param boardRow -- row position on the board
+     * @param boardCol -- column position on the board
      */
     public Bishop(boolean isWhite, int boardRow, int boardCol)
     {
@@ -20,7 +21,8 @@ public class Bishop extends Piece
     }
 
     /**
-     * Gets the unicode symbol for bishop
+     * Returns the Unicode symbol for the Bishop piece
+     * @return String -- white or black bishop symbol
      */
     @Override
     public String getSymbol()
@@ -29,12 +31,12 @@ public class Bishop extends Piece
     }
 
     /**
-     * Checks if bishop can move to target. Has to be diagonal
-     * and path cant be blocked
-     * @param row
-     * @param col
-     * @param board
-     * @return
+     * Checks if the Bishop can move to the target square. Validates that the
+     * move is diagonal and that no pieces block the path
+     * @param row -- target row
+     * @param col -- target column
+     * @param board -- the current board state
+     * @return boolean -- true if the move is valid
      */
     @Override
     public boolean canMoveTo(int row, int col, Board board)
@@ -42,13 +44,13 @@ public class Bishop extends Piece
         if (!isValidTarget(row, col, board)) return false;
         int dRow = row - getBoardRow();
         int dCol = col - getBoardCol();
-        // has to be diagonal
+        // Must move diagonally (equal row and col distance)
         if (Math.abs(dRow) != Math.abs(dCol) || dRow == 0) return false;
         int stepR = Integer.signum(dRow);
         int stepC = Integer.signum(dCol);
         int r = getBoardRow() + stepR;
         int c = getBoardCol() + stepC;
-        // walks along diagonal checking for blockers
+        // Checks each square along the diagonal path for blocking pieces
         while (r != row || c != col)
         {
             if (board.getPiece(r, c) != null) return false;
@@ -59,9 +61,10 @@ public class Bishop extends Piece
     }
 
     /**
-     * Gets all possible diagonal moves
-     * @param board
-     * @return
+     * Returns an array of all possible moves for this Bishop by checking
+     * all four diagonal directions
+     * @param board -- the current board state
+     * @return Point[] -- array of possible move locations
      */
     @Override
     public Point[] getPossibleMoves(Board board)

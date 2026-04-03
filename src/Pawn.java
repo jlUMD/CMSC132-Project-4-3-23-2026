@@ -1,9 +1,9 @@
 import java.util.ArrayList;
 
 /**
- * The pawn piece. Moves forward, captures diagonal, can double move
- * from start, and has en passant
- * @author ganesh
+ * Represents a Pawn chess piece. Extends Piece and moves forward one square,
+ * with the option to move two squares from its starting position.
+ * @author ganeshan
  *
  */
 public class Pawn extends Piece
@@ -12,10 +12,10 @@ public class Pawn extends Piece
     private boolean justDoubleMoved;
 
     /**
-     * Creates pawn object
-     * @param isWhite
-     * @param boardRow
-     * @param boardCol
+     * Creates a Pawn object at the specified board position
+     * @param isWhite -- true if white, false if black
+     * @param boardRow -- row position on the board
+     * @param boardCol -- column position on the board
      */
     public Pawn(boolean isWhite, int boardRow, int boardCol)
     {
@@ -24,8 +24,8 @@ public class Pawn extends Piece
     }
 
     /**
-     * Did this pawn just double move (for en passant)
-     * @return
+     * Returns whether this Pawn just moved two squares (used for en passant)
+     * @return boolean -- true if the pawn just double moved
      */
     public boolean justDoubleMoved()
     {
@@ -33,8 +33,8 @@ public class Pawn extends Piece
     }
 
     /**
-     * Setter for the double move flag
-     * @param val
+     * Sets the justDoubleMoved flag for en passant tracking
+     * @param val -- true or false
      */
     public void setJustDoubleMoved(boolean val)
     {
@@ -42,7 +42,8 @@ public class Pawn extends Piece
     }
 
     /**
-     * Gets the unicode symbol for pawn
+     * Returns the Unicode symbol for the Pawn piece
+     * @return String -- white or black pawn symbol
      */
     @Override
     public String getSymbol()
@@ -51,27 +52,28 @@ public class Pawn extends Piece
     }
 
     /**
-     * Checks if pawn can move to target. Forward move, double move,
-     * diagonal capture, and en passant are all handled here
-     * @param row
-     * @param col
-     * @param board
-     * @return
+     * Checks if the Pawn can move to the target square. Handles single forward
+     * move, double move from starting row, diagonal captures, and en passant
+     * @param row -- target row
+     * @param col -- target column
+     * @param board -- the current board state
+     * @return boolean -- true if the move is valid
      */
     @Override
     public boolean canMoveTo(int row, int col, Board board)
     {
+        // White moves up (-1), black moves down (+1)
         int direction = isWhite() ? -1 : 1;
         int dRow = row - getBoardRow();
         int dCol = col - getBoardCol();
 
-        // single forward
+        // Single forward move to empty square
         if (dCol == 0 && dRow == direction && board.getPiece(row, col) == null)
         {
             return true;
         }
 
-        // double forward from start
+        // Double forward move from starting position
         int startRow = isWhite() ? 6 : 1;
         if (dCol == 0 && dRow == 2 * direction && getBoardRow() == startRow
                 && board.getPiece(getBoardRow() + direction, col) == null
@@ -80,15 +82,16 @@ public class Pawn extends Piece
             return true;
         }
 
-        // diagonal capture or en passant
+        // Diagonal capture (normal or en passant)
         if (Math.abs(dCol) == 1 && dRow == direction)
         {
+            // Normal diagonal capture
             Piece target = board.getPiece(row, col);
             if (target != null && target.isWhite() != isWhite())
             {
                 return true;
             }
-            // en passant
+            // En passant capture
             Piece adjacent = board.getPiece(getBoardRow(), col);
             if (adjacent instanceof Pawn && adjacent.isWhite() != isWhite()
                     && ((Pawn) adjacent).justDoubleMoved())
@@ -101,9 +104,10 @@ public class Pawn extends Piece
     }
 
     /**
-     * Gets all possible pawn moves
-     * @param board
-     * @return
+     * Returns an array of all possible moves for this Pawn including forward
+     * moves, diagonal captures, and en passant
+     * @param board -- the current board state
+     * @return Point[] -- array of possible move locations
      */
     @Override
     public Point[] getPossibleMoves(Board board)
@@ -113,7 +117,7 @@ public class Pawn extends Piece
         int r = getBoardRow();
         int c = getBoardCol();
 
-        // forward moves
+        // Forward moves (single and double)
         if (r + direction >= 0 && r + direction <= 7 && board.getPiece(r + direction, c) == null)
         {
             moves.add(new Point(r + direction, c));
@@ -124,18 +128,20 @@ public class Pawn extends Piece
             }
         }
 
-        // diagonal captures + en passant
+        // Diagonal captures and en passant on both sides
         for (int dc = -1; dc <= 1; dc += 2)
         {
             int nc = c + dc;
             int nr = r + direction;
             if (nc >= 0 && nc <= 7 && nr >= 0 && nr <= 7)
             {
+                // Normal diagonal capture
                 Piece target = board.getPiece(nr, nc);
                 if (target != null && target.isWhite() != isWhite())
                 {
                     moves.add(new Point(nr, nc));
                 }
+                // En passant capture
                 Piece adjacent = board.getPiece(r, nc);
                 if (adjacent instanceof Pawn && adjacent.isWhite() != isWhite()
                         && ((Pawn) adjacent).justDoubleMoved())
@@ -149,7 +155,10 @@ public class Pawn extends Piece
     }
 
     /**
-     * Moves pawn and tracks if it double moved for en passant
+     * Moves the Pawn to the target position and tracks whether it was a
+     * double move (for en passant detection on the next turn)
+     * @param row -- target row
+     * @param col -- target column
      */
     @Override
     public void moveTo(int row, int col)

@@ -1,6 +1,6 @@
 /**
  * A support class used to help PuzzleLoader
- * @author justi
+ * @author justin
  *
  */
 public class PuzzleSolver

@@ -1,6 +1,7 @@
 /**
- * Keeps track of a player's info like name, color, and stats
- * @author ganesh
+ * Represents a player in the chess game. Tracks the player's name, color,
+ * win/loss record, and number of puzzles solved.
+ * @author ganeshan
  *
  */
 public class Player
@@ -13,9 +14,9 @@ public class Player
     private int puzzlesSolved;
 
     /**
-     * Creates player with name and color
-     * @param name
-     * @param isWhite
+     * Creates a Player with a name and color
+     * @param name -- the player's display name
+     * @param isWhite -- true if playing white, false if black
      */
     public Player(String name, boolean isWhite)
     {
@@ -26,52 +27,78 @@ public class Player
         this.puzzlesSolved = 0;
     }
 
-    // Getters
+    /**
+     * Returns the player's name
+     * @return String -- the name
+     */
     public String getName()
     {
         return name;
     }
 
+    /**
+     * Returns whether this player is playing white
+     * @return boolean -- true if white
+     */
     public boolean isWhite()
     {
         return isWhite;
     }
 
+    /**
+     * Returns the player's total wins
+     * @return int -- number of wins
+     */
     public int getWins()
     {
         return wins;
     }
 
+    /**
+     * Returns the player's total losses
+     * @return int -- number of losses
+     */
     public int getLosses()
     {
         return losses;
     }
 
+    /**
+     * Returns the number of puzzles the player has solved
+     * @return int -- puzzles solved count
+     */
     public int getPuzzlesSolved()
     {
         return puzzlesSolved;
     }
 
-    /** Adds a win */
+    /**
+     * Increments the player's win count by one
+     */
     public void addWin()
     {
         wins++;
     }
 
-    /** Adds a loss */
+    /**
+     * Increments the player's loss count by one
+     */
     public void addLoss()
     {
         losses++;
     }
 
-    /** Adds a puzzle solved */
+    /**
+     * Increments the player's puzzles solved count by one
+     */
     public void addPuzzleSolved()
     {
         puzzlesSolved++;
     }
 
     /**
-     * toString for player
+     * Returns a string representation of the player with name and color
+     * @return String -- formatted as "Name (White)" or "Name (Black)"
      */
     @Override
     public String toString()

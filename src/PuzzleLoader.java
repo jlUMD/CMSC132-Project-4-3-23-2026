@@ -3,7 +3,7 @@ import java.util.List;
 
 /**
  * Handles the backend and board states of the puzzles
- * @author justi
+ * @author justin
  *
  */
 public class PuzzleLoader

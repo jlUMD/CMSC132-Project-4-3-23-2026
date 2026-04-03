@@ -1,6 +1,7 @@
 /**
- * Simple point class with x and y, used for positions
- * @author ganesh
+ * Represents a 2D point with x and y coordinates. Used for board positions
+ * and screen positions throughout the project.
+ * @author ganeshan
  *
  */
 public class Point
@@ -10,9 +11,9 @@ public class Point
     public double y;
 
     /**
-     * Creates a point
-     * @param x
-     * @param y
+     * Creates a Point with the given x and y coordinates
+     * @param x -- the x coordinate (column or horizontal position)
+     * @param y -- the y coordinate (row or vertical position)
      */
     public Point(double x, double y)
     {
@@ -20,18 +21,28 @@ public class Point
         this.y = y;
     }
 
-    /** Gets x as int */
+    /**
+     * Returns the x coordinate as an integer
+     * @return int -- the x value cast to int
+     */
     public int getX()
     {
         return (int) x;
     }
 
-    /** Gets y as int */
+    /**
+     * Returns the y coordinate as an integer
+     * @return int -- the y value cast to int
+     */
     public int getY()
     {
         return (int) y;
     }
 
+    /**
+     * Returns a string representation of the point as "(x, y)"
+     * @return String -- formatted point string
+     */
     @Override
     public String toString()
     {
@@ -39,7 +50,10 @@ public class Point
     }
 
     /**
-     * Two points are equal if same x and y
+     * Checks equality between two Points by comparing their integer
+     * x and y values
+     * @param obj -- the object to compare to
+     * @return boolean -- true if the points have the same coordinates
      */
     @Override
     public boolean equals(Object obj)
@@ -50,6 +64,10 @@ public class Point
         return this.getX() == other.getX() && this.getY() == other.getY();
     }
 
+    /**
+     * Returns a hash code based on the integer x and y values
+     * @return int -- the hash code
+     */
     @Override
     public int hashCode()
     {

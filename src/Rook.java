@@ -1,18 +1,19 @@
 import java.util.ArrayList;
 
 /**
- * The rook piece, moves in straight lines only (up down left right)
- * @author ganesh
+ * Represents a Rook chess piece. Extends Piece and can move any number of
+ * squares horizontally or vertically as long as the path is clear.
+ * @author ganeshan
  *
  */
 public class Rook extends Piece
 {
 
     /**
-     * Creates rook object
-     * @param isWhite
-     * @param boardRow
-     * @param boardCol
+     * Creates a Rook object at the specified board position
+     * @param isWhite -- true if white, false if black
+     * @param boardRow -- row position on the board
+     * @param boardCol -- column position on the board
      */
     public Rook(boolean isWhite, int boardRow, int boardCol)
     {
@@ -20,7 +21,8 @@ public class Rook extends Piece
     }
 
     /**
-     * Gets the unicode symbol for rook
+     * Returns the Unicode symbol for the Rook piece
+     * @return String -- white or black rook symbol
      */
     @Override
     public String getSymbol()
@@ -29,12 +31,12 @@ public class Rook extends Piece
     }
 
     /**
-     * Checks if rook can move to target, has to be a straight line
-     * and cant be blocked
-     * @param row
-     * @param col
-     * @param board
-     * @return
+     * Checks if the Rook can move to the target square. Validates that the
+     * move is strictly horizontal or vertical and that no pieces block the path
+     * @param row -- target row
+     * @param col -- target column
+     * @param board -- the current board state
+     * @return boolean -- true if the move is valid
      */
     @Override
     public boolean canMoveTo(int row, int col, Board board)
@@ -42,13 +44,14 @@ public class Rook extends Piece
         if (!isValidTarget(row, col, board)) return false;
         int dRow = row - getBoardRow();
         int dCol = col - getBoardCol();
-        // cant move diagonally
+        // Must move in a straight line (only row OR col changes, not both)
         if (dRow != 0 && dCol != 0) return false;
         if (dRow == 0 && dCol == 0) return false;
         int stepR = Integer.signum(dRow);
         int stepC = Integer.signum(dCol);
         int r = getBoardRow() + stepR;
         int c = getBoardCol() + stepC;
+        // Checks each square along the path for blocking pieces
         while (r != row || c != col)
         {
             if (board.getPiece(r, c) != null) return false;
@@ -59,9 +62,10 @@ public class Rook extends Piece
     }
 
     /**
-     * Gets all possible straight line moves
-     * @param board
-     * @return
+     * Returns an array of all possible moves for this Rook by checking
+     * all 4 straight directions (up, down, left, right)
+     * @param board -- the current board state
+     * @return Point[] -- array of possible move locations
      */
     @Override
     public Point[] getPossibleMoves(Board board)

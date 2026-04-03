@@ -6,16 +6,18 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * This is the main class that runs everything. Handles input,
- * game flow, drawing, animations, and puzzle mode
- * @author ganesh
+ * Main class for the chess application. Extends Game and handles all user
+ * input, game logic flow, animations, rendering, and both normal play
+ * and puzzle mode.
+ * @author ganeshan
  *
  */
 public class ChessGame extends Game
 {
 
     /**
-     * Keeps track of game state stuff like whose turn, check, etc
+     * Inner class that tracks the current state of the game including
+     * whose turn it is, check/checkmate/stalemate flags, and captured pieces
      */
     private class GameState
     {
@@ -26,7 +28,10 @@ public class ChessGame extends Game
         ArrayList<Piece> capturedWhite;
         ArrayList<Piece> capturedBlack;
 
-        /** Creates game state starting with white */
+        /**
+         * Creates a GameState with the white player as the starting player
+         * @param white -- the white Player object
+         */
         GameState(Player white)
         {
             this.currentPlayer = white;
@@ -95,7 +100,8 @@ public class ChessGame extends Game
     private boolean pendingPuzzleSuccess;
 
     /**
-     * Sets up everything, board, players, key listener, etc
+     * Creates the ChessGame window and initializes all game objects,
+     * players, board, puzzle loader, and key listener
      */
     public ChessGame()
     {
@@ -150,9 +156,10 @@ public class ChessGame extends Game
     }
 
     /**
-     * Handles all the key presses, different behavior depending on
-     * if we're in menu, game over, or playing
-     * @param e
+     * Handles all keyboard input. Routes to menu, game over, or in-game
+     * controls depending on the current state. Manages cursor movement,
+     * piece selection, and move execution.
+     * @param e -- the KeyEvent from the key listener
      */
     private void handleKeyPress(KeyEvent e)
     {
@@ -317,12 +324,13 @@ public class ChessGame extends Game
     }
 
     /**
-     * Starts the sliding animation for a move, also makes
-     * the actual move on the board backend
-     * @param fromRow
-     * @param fromCol
-     * @param toRow
-     * @param toCol
+     * Starts the move animation from one square to another. Sets up the
+     * animation coordinates, checks for captures, executes the move on the
+     * board backend, and begins the animation loop
+     * @param fromRow -- starting row of the piece
+     * @param fromCol -- starting column of the piece
+     * @param toRow -- destination row
+     * @param toCol -- destination column
      */
     private void startMoveAnimation(int fromRow, int fromCol, int toRow, int toCol)
     {
@@ -373,8 +381,9 @@ public class ChessGame extends Game
     }
 
     /**
-     * Runs when animation is done, switches turns and checks
-     * for checkmate/stalemate/check. Also handles puzzle results
+     * Called when the move animation completes. Switches turns, checks for
+     * checkmate/stalemate/check conditions, and updates status messages.
+     * For puzzle mode, checks if the solution was correct.
      */
     private void finishAnimation()
     {
@@ -443,7 +452,8 @@ public class ChessGame extends Game
     }
 
     /**
-     * Resets everything back to a fresh game
+     * Resets the game to its initial state with a fresh board, white to move,
+     * and all flags cleared
      */
     private void resetGame()
     {
@@ -466,7 +476,9 @@ public class ChessGame extends Game
     }
 
     /**
-     * Overrides update so it doesnt flicker
+     * Overrides update to call paint directly, preventing screen flicker
+     * with double buffering
+     * @param g -- the Graphics object
      */
     @Override
     public void update(Graphics g)
@@ -475,9 +487,10 @@ public class ChessGame extends Game
     }
 
     /**
-     * Draws everything to an offscreen image then puts it on screen
-     * (double buffering)
-     * @param brush
+     * Main rendering method. Uses double buffering to draw the board,
+     * animations, cursor, selection, sidebar, and status bar to an
+     * offscreen image before painting to screen
+     * @param brush -- the Graphics object provided by the system
      */
     @Override
     public void paint(Graphics brush)
@@ -610,8 +623,11 @@ public class ChessGame extends Game
     }
 
     /**
-     * Paints over a square during animation so the old piece
-     * doesnt show through
+     * Redraws a single square's background color during animation to cover
+     * up the piece that was there before the move
+     * @param g -- the Graphics object
+     * @param row -- the row of the square to cover
+     * @param col -- the column of the square to cover
      */
     private void coverSquare(Graphics g, int row, int col)
     {
@@ -626,7 +642,13 @@ public class ChessGame extends Game
     }
 
     /**
-     * Draws a piece at a pixel position, used for the animation
+     * Draws a piece symbol at a specific pixel position on screen.
+     * Used during animation to render the moving piece
+     * @param g -- the Graphics object
+     * @param symbol -- the Unicode symbol of the piece
+     * @param isWhite -- true if white piece, false if black
+     * @param x -- the x pixel position
+     * @param y -- the y pixel position
      */
     private void drawPieceAt(Graphics g, String symbol, boolean isWhite, int x, int y)
     {
@@ -642,7 +664,9 @@ public class ChessGame extends Game
     }
 
     /**
-     * Draws the menu screen with title, options, and controls
+     * Draws the main menu screen with the title, game mode options,
+     * controls info, and player stats if any games have been played
+     * @param g -- the Graphics object
      */
     private void drawMenu(Graphics g)
     {
@@ -695,7 +719,10 @@ public class ChessGame extends Game
     }
 
     /**
-     * Shows player stats on the menu if theres any to show
+     * Draws the player stats section on the menu showing wins, losses,
+     * and puzzles solved. Only draws if at least one stat is nonzero
+     * @param g -- the Graphics object
+     * @param startY -- the y pixel position to start drawing stats
      */
     private void drawPlayerStats(Graphics g, int startY)
     {
@@ -721,7 +748,9 @@ public class ChessGame extends Game
     }
 
     /**
-     * Draws the yellow cursor box where the player is hovering
+     * Draws the yellow cursor highlight on the square the player is
+     * currently hovering over with arrow keys
+     * @param g -- the Graphics object
      */
     private void drawCursor(Graphics g)
     {
@@ -740,7 +769,9 @@ public class ChessGame extends Game
     }
 
     /**
-     * Draws the blue highlight on the selected piece's square
+     * Draws the blue selection highlight on the square of the currently
+     * selected piece. Only draws if a piece is selected
+     * @param g -- the Graphics object
      */
     private void drawSelection(Graphics g)
     {
@@ -762,7 +793,10 @@ public class ChessGame extends Game
     }
 
     /**
-     * Draws the panel on the right with turn info, puzzle info, etc
+     * Draws the sidebar panel on the right side of the board. Shows puzzle
+     * info in puzzle mode, or turn indicator, check status, captured pieces,
+     * and controls in normal mode
+     * @param g -- the Graphics object
      */
     private void drawSidebar(Graphics g)
     {
@@ -847,7 +881,9 @@ public class ChessGame extends Game
     }
 
     /**
-     * Draws the bar at the bottom with status messages
+     * Draws the status bar below the board showing the current status
+     * message (check, checkmate, turn info, etc.) and the cursor position
+     * @param g -- the Graphics object
      */
     private void drawStatusBar(Graphics g)
     {
@@ -888,7 +924,9 @@ public class ChessGame extends Game
     }
 
     /**
-     * Main method, starts the game
+     * Entry point for the application. Creates a new ChessGame instance
+     * which opens the game window
+     * @param args -- command line arguments (not used)
      */
     public static void main(String[] args)
     {

@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 /**
  * This class creates the board. The board takes care of the array of pieces,
  * the square tiles, and a few setup and background methods
- * @author justi
+ * @author justin
  *
  */
 public class Board
